@@ -24,6 +24,8 @@ services:
     volumes:
       - ${CONFIG_FOLDER}/npm:/data
       - /etc/letsencrypt:/etc/letsencrypt
+    networks:
+      - networkarr
 
   nextcloud:
     container_name: "nextcloud"
@@ -38,6 +40,8 @@ services:
       - PUID=1000
       - PGID=1000
       - TZ=Europe/Copenhagen
+    networks:
+      - networkarr
 
   mysql:
     container_name: "mysql"
@@ -48,6 +52,8 @@ services:
       - ${CONFIG_FOLDER}/mysql:/var/lib/mysql
     environment:
       - MYSQL_ROOT_PASSWORD=${PASSWORD}
+    networks:
+      - networkarr
 
   phpmyadmin:
     image: phpmyadmin
@@ -56,6 +62,8 @@ services:
       - 82:80
     environment:
       - PMA_ARBITRARY=1
+    networks:
+      - networkarr
 
 ####### ILLIGAL SHIT ######
 
@@ -73,6 +81,8 @@ services:
     ports:
       - 9117:9117
     restart: unless-stopped
+    networks:
+      - networkarr
 
   sonarr:
     image: lscr.io/linuxserver/sonarr:latest
@@ -88,6 +98,8 @@ services:
     ports:
       - 8989:8989
     restart: unless-stopped
+    networka:
+      - networkarr
 
   sonarr-cz:
     image: lscr.io/linuxserver/sonarr:latest
@@ -103,6 +115,8 @@ services:
     ports:
       - 8990:8989
     restart: unless-stopped
+    networks:
+      - networkarr
 
   radarr:
     image: lscr.io/linuxserver/radarr:latest
@@ -118,6 +132,8 @@ services:
     ports:
       - 7878:7878
     restart: unless-stopped
+    networks:
+      - networkarr
 
   radarr-cz:
     image: lscr.io/linuxserver/radarr:latest
@@ -133,6 +149,8 @@ services:
     ports:
       - 7879:7878
     restart: unless-stopped
+    networks:
+      - networkarr
 
   bazarr:
     image: lscr.io/linuxserver/bazarr:latest
@@ -148,6 +166,8 @@ services:
     ports:
       - 6767:6767
     restart: unless-stopped
+    networks:
+      - networkarr
 
   deluge:
     image: lscr.io/linuxserver/deluge:latest
@@ -165,7 +185,8 @@ services:
       - 6881:6881
       - 6881:6881/udp
     restart: unless-stopped
-
+    networks:
+      - networkarr
 
   overseerr:
     image: lscr.io/linuxserver/overseerr:latest
@@ -192,6 +213,8 @@ services:
     ports:
       - 8181:8181
     restart: unless-stopped
+    networks:
+      - networkarr
 
   plex:
     container_name: plex
@@ -221,6 +244,8 @@ services:
       - 85:80
       - 444:443
     restart: unless-stopped
+    networks:
+      - networkarr
 
   watchtower:
     image: containrrr/watchtower
