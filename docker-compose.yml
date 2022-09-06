@@ -1,0 +1,236 @@
+version: "3"
+services:
+  app:
+    container_name: "nginx-proxy-manager"
+    image: 'jc21/nginx-proxy-manager:latest'
+    restart: unless-stopped
+    ports:
+      # These ports are in format <host-port>:<container-port>
+      - '80:80' # Public HTTP Port
+      - '443:443' # Public HTTPS Port
+      - '81:81' # Admin Web Port
+      # Add any other Stream port you want to expose
+      # - '21:21' # FTP
+
+    # Uncomment the next line if you uncomment anything in the section
+    # environment:
+      # Uncomment this if you want to change the location of 
+      # the SQLite DB file within the container
+      # DB_SQLITE_FILE: "/data/database.sqlite"
+
+      # Uncomment this if IPv6 is not enabled on your host
+      # DISABLE_IPV6: 'true'
+
+    volumes:
+      - ${CONFIG_FOLDER}/npm:/data
+      - /etc/letsencrypt:/etc/letsencrypt
+
+  nextcloud:
+    container_name: "nextcloud"
+    image: lscr.io/linuxserver/nextcloud:latest
+    restart: unless-stopped
+    ports:
+      - 83:443
+    volumes:
+      - ${DATA_FOLDER}/nextcloud:/data
+      - ${CONFIG_FOLDER}/nextcloud:/config
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Copenhagen
+
+  mysql:
+    container_name: "mysql"
+    image: mysql
+    ports:
+      - 3306:3306
+    volumes:
+      - ${CONFIG_FOLDER}/mysql:/var/lib/mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=${PASSWORD}
+
+  phpmyadmin:
+    image: phpmyadmin
+    restart: always
+    ports:
+      - 82:80
+    environment:
+      - PMA_ARBITRARY=1
+
+####### ILLIGAL SHIT ######
+
+  jackett:
+    container_name: jackett
+    image: lscr.io/linuxserver/jackett:latest
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - AUTO_UPDATE=true
+      - TZ=Europe/Copenhagen
+    volumes:
+      - ${CONFIG_FOLDER}/jackett:/config
+      - ${DATA_FOLDER}/downloads:/downloads
+    ports:
+      - 9117:9117
+    restart: unless-stopped
+
+  sonarr:
+    image: lscr.io/linuxserver/sonarr:latest
+    container_name: sonarr
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Copenhagen
+    volumes:
+      - ${CONFIG_FOLDER}/sonarr:/config
+      - ${DATA_FOLDER}/media/TV Shows:/tv #optional
+      - ${DATA_FOLDER}/downloads:/downloads #optional
+    ports:
+      - 8989:8989
+    restart: unless-stopped
+
+  sonarr-cz:
+    image: lscr.io/linuxserver/sonarr:latest
+    container_name: sonarr-cz
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Copenhagen
+    volumes:
+      - ${CONFIG_FOLDER}/sonarr-cz:/config
+      - ${DATA_FOLDER}/media/TV Shows CZ:/tv #optional
+      - ${DATA_FOLDER}/downloads:/downloads #optional
+    ports:
+      - 8990:8989
+    restart: unless-stopped
+
+  radarr:
+    image: lscr.io/linuxserver/radarr:latest
+    container_name: radarr
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Copenhagen
+    volumes:
+      - ${CONFIG_FOLDER}/radarr:/config
+      - ${DATA_FOLDER}/media/Movies:/movies #optional
+      - ${DATA_FOLDER}/downloads:/downloads #optional
+    ports:
+      - 7878:7878
+    restart: unless-stopped
+
+  radarr-cz:
+    image: lscr.io/linuxserver/radarr:latest
+    container_name: radarr-cz
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Copenhagen
+    volumes:
+      - ${CONFIG_FOLDER}/radarr-cz:/config
+      - ${DATA_FOLDER}/media/Movies CZ:/movies #optional
+      - ${DATA_FOLDER}/downloads:/downloads #optional
+    ports:
+      - 7879:7878
+    restart: unless-stopped
+
+  bazarr:
+    image: lscr.io/linuxserver/bazarr:latest
+    container_name: bazarr
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Copenhagen
+    volumes:
+      - ${CONFIG_FOLDER}/bazarr:/config
+      - ${DATA_FOLDER}/media/Movies:/movies #optional
+      - ${DATA_FOLDER}/media/TV Shows:/tv #optional
+    ports:
+      - 6767:6767
+    restart: unless-stopped
+
+  deluge:
+    image: lscr.io/linuxserver/deluge:latest
+    container_name: deluge
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Copenhagen
+      - DELUGE_LOGLEVEL=error #optional
+    volumes:
+      - ${CONFIG_FOLDER}/deluge:/config
+      - ${DATA_FOLDER}/downloads:/downloads
+    ports:
+      - 8112:8112
+      - 6881:6881
+      - 6881:6881/udp
+    restart: unless-stopped
+
+
+  overseerr:
+    image: lscr.io/linuxserver/overseerr:latest
+    container_name: overseerr
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Copenhagen
+    volumes:
+      - ${DATA_FOLDER}/overseerr:/config
+    ports:
+      - 5055:5055
+    restart: unless-stopped
+
+  tautulli:
+    image: lscr.io/linuxserver/tautulli:latest
+    container_name: tautulli
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Copenhagen
+    volumes:
+      - ${CONFIG_FOLDER}/tautulli:/config
+    ports:
+      - 8181:8181
+    restart: unless-stopped
+
+  plex:
+    container_name: plex
+    image: plexinc/pms-docker
+    restart: unless-stopped
+    environment:
+      - TZ=Europe/Copenhagen
+      - PLEX_CLAIM=${PLEX_CLAIM}
+    network_mode: host
+    volumes:
+      - ${DATA_FOLDER}/plex:/config
+      - ${DATA_FOLDER}/transcode:/transcode
+      - ${DATA_FOLDER}:/data
+    devices:
+      - /dev/dri:/dev/dri
+
+  heimdall:
+    image: lscr.io/linuxserver/heimdall:latest
+    container_name: heimdall
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/London
+    volumes:
+      - ${CONFIG_FOLDER}/heimdall:/config
+    ports:
+      - 85:80
+      - 444:443
+    restart: unless-stopped
+
+  watchtower:
+    image: containrrr/watchtower
+    container_name: watchtower
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ${CONFIG_FOLDER}/watchtower/config.json:/config.jsom
+
+  networks:
+    networkarr:
+      name: networkarr
+      driver: bridge
+      internal: false
