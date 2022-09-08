@@ -254,8 +254,8 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - ${CONFIG_FOLDER}/watchtower/config.json:/config.jsom
 
-  networks:
-    networkarr:
-      name: networkarr
-      driver: bridge
-      internal: false
+networks:
+  networkarr:
+    name: networkarr
+    driver: bridge
+    internal: false
