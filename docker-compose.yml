@@ -1,38 +1,26 @@
-version: "3"
+version: "3.8"
 services:
   app:
     container_name: "nginx-proxy-manager"
     image: 'jc21/nginx-proxy-manager:latest'
     restart: unless-stopped
     ports:
-      # These ports are in format <host-port>:<container-port>
-      - '80:80' # Public HTTP Port
-      - '443:443' # Public HTTPS Port
-      - '81:81' # Admin Web Port
-      # Add any other Stream port you want to expose
-      # - '21:21' # FTP
-
-    # Uncomment the next line if you uncomment anything in the section
-    # environment:
-      # Uncomment this if you want to change the location of 
-      # the SQLite DB file within the container
-      # DB_SQLITE_FILE: "/data/database.sqlite"
-
-      # Uncomment this if IPv6 is not enabled on your host
-      # DISABLE_IPV6: 'true'
-
+      - 80:80
+      - 443:443
+      - 81:81
     volumes:
       - ${CONFIG_FOLDER}/npm:/data
       - /etc/letsencrypt:/etc/letsencrypt
     networks:
-      - networkarr
+      - networkarr-pri
+      - networkarr-pub
 
   nextcloud:
     container_name: "nextcloud"
     image: lscr.io/linuxserver/nextcloud:latest
     restart: unless-stopped
     ports:
-      - 83:443
+      - 443:443
     volumes:
       - ${DATA_FOLDER}/nextcloud:/data
       - ${CONFIG_FOLDER}/nextcloud:/config
@@ -41,7 +29,7 @@ services:
       - PGID=1000
       - TZ=Europe/Copenhagen
     networks:
-      - networkarr
+      - networkarr-pri
 
   mysql:
     container_name: "mysql"
@@ -53,7 +41,7 @@ services:
     environment:
       - MYSQL_ROOT_PASSWORD=${PASSWORD}
     networks:
-      - networkarr
+      - networkarr-pri
 
   phpmyadmin:
     image: phpmyadmin
@@ -63,7 +51,7 @@ services:
     environment:
       - PMA_ARBITRARY=1
     networks:
-      - networkarr
+      - networkarr-pri
 
 ####### ILLIGAL SHIT ######
 
@@ -82,7 +70,7 @@ services:
       - 9117:9117
     restart: unless-stopped
     networks:
-      - networkarr
+      - networkarr-pri
 
   sonarr:
     image: lscr.io/linuxserver/sonarr:latest
@@ -99,7 +87,7 @@ services:
       - 8989:8989
     restart: unless-stopped
     networks:
-      - networkarr
+      - networkarr-pri
 
   sonarr-cz:
     image: lscr.io/linuxserver/sonarr:latest
@@ -116,7 +104,7 @@ services:
       - 8990:8989
     restart: unless-stopped
     networks:
-      - networkarr
+      - networkarr-pri
 
   radarr:
     image: lscr.io/linuxserver/radarr:latest
@@ -133,7 +121,7 @@ services:
       - 7878:7878
     restart: unless-stopped
     networks:
-      - networkarr
+      - networkarr-pri
 
   radarr-cz:
     image: lscr.io/linuxserver/radarr:latest
@@ -150,7 +138,7 @@ services:
       - 7879:7878
     restart: unless-stopped
     networks:
-      - networkarr
+      - networkarr-pri
 
   bazarr:
     image: lscr.io/linuxserver/bazarr:latest
@@ -167,7 +155,7 @@ services:
       - 6767:6767
     restart: unless-stopped
     networks:
-      - networkarr
+      - networkarr-pri
 
   deluge:
     image: lscr.io/linuxserver/deluge:latest
@@ -186,7 +174,7 @@ services:
       - 6881:6881/udp
     restart: unless-stopped
     networks:
-      - networkarr
+      - networkarr-pri
 
   overseerr:
     image: lscr.io/linuxserver/overseerr:latest
@@ -200,6 +188,8 @@ services:
     ports:
       - 5055:5055
     restart: unless-stopped
+    networks:
+      - networkarr-pri
 
   tautulli:
     image: lscr.io/linuxserver/tautulli:latest
@@ -214,7 +204,7 @@ services:
       - 8181:8181
     restart: unless-stopped
     networks:
-      - networkarr
+      - networkarr-priv
 
   plex:
     container_name: plex
@@ -241,11 +231,11 @@ services:
     volumes:
       - ${CONFIG_FOLDER}/heimdall:/config
     ports:
-      - 85:80
+      - 83:80
       - 444:443
     restart: unless-stopped
     networks:
-      - networkarr
+      - networkarr-priv
 
   watchtower:
     image: containrrr/watchtower
@@ -253,9 +243,15 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ${CONFIG_FOLDER}/watchtower/config.json:/config.jsom
+    networks:
+      - networkarr-pri
 
 networks:
-  networkarr:
-    name: networkarr
+  networkarr-pub:
+    name: networkarr-pub
     driver: bridge
     internal: false
+  networkarr-pri:
+    name: networkarr-pri
+    driver: bridge
+    internal: true
