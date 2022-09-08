@@ -20,7 +20,7 @@ services:
     image: lscr.io/linuxserver/nextcloud:latest
     restart: unless-stopped
     ports:
-      - 443:443
+      - 444:443
     volumes:
       - ${DATA_FOLDER}/nextcloud:/data
       - ${CONFIG_FOLDER}/nextcloud:/config
@@ -232,7 +232,7 @@ services:
       - ${CONFIG_FOLDER}/heimdall:/config
     ports:
       - 83:80
-      - 444:443
+      # - 445:443
     restart: unless-stopped
     networks:
       - networkarr-priv
