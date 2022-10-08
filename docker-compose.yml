@@ -190,6 +190,21 @@ services:
     restart: unless-stopped
     networks:
       - networkarr-pri
+      
+  overseerr-cz:
+    image: lscr.io/linuxserver/overseerr:latest
+    container_name: overseerr-cz
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Copenhagen
+    volumes:
+      - ${DATA_FOLDER}/overseerr:/config
+    ports:
+      - 5055:5056
+    restart: unless-stopped
+    networks:
+      - networkarr-pri
 
   tautulli:
     image: lscr.io/linuxserver/tautulli:latest
