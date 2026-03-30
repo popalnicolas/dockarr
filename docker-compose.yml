@@ -1,63 +1,11 @@
 version: "3.8"
 services:
-  app:
-    container_name: "nginx-proxy-manager"
-    image: 'jc21/nginx-proxy-manager:latest'
-    restart: unless-stopped
-    ports:
-      - 80:80
-      - 443:443
-      - 81:81
-    volumes:
-      - ${CONFIG_FOLDER}/npm:/data
-      - /etc/letsencrypt:/etc/letsencrypt
-    networks:
-      - networkarr-pri
-      - networkarr-pub
-
-  nextcloud:
-    container_name: "nextcloud"
-    image: lscr.io/linuxserver/nextcloud:latest
-    restart: unless-stopped
-    ports:
-      - 444:443
-    volumes:
-      - ${DATA_FOLDER}/nextcloud:/data
-      - ${CONFIG_FOLDER}/nextcloud:/config
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=Europe/Copenhagen
-    networks:
-      - networkarr-pri
-
-  mysql:
-    container_name: "mysql"
-    image: mysql
-    ports:
-      - 3306:3306
-    volumes:
-      - ${CONFIG_FOLDER}/mysql:/var/lib/mysql
-    environment:
-      - MYSQL_ROOT_PASSWORD=${PASSWORD}
-    networks:
-      - networkarr-pri
-
-  phpmyadmin:
-    image: phpmyadmin
-    restart: always
-    ports:
-      - 82:80
-    environment:
-      - PMA_ARBITRARY=1
-    networks:
-      - networkarr-pri
-
-####### ILLIGAL SHIT ######
-
   jackett:
     container_name: jackett
     image: lscr.io/linuxserver/jackett:latest
+    depends_on:
+      gluetun:
+        condition: service_started
     environment:
       - PUID=1000
       - PGID=1000
@@ -66,11 +14,8 @@ services:
     volumes:
       - ${CONFIG_FOLDER}/jackett:/config
       - ${DATA_FOLDER}/downloads:/downloads
-    ports:
-      - 9117:9117
     restart: unless-stopped
-    networks:
-      - networkarr-pri
+    network_mode: service:gluetun
 
   sonarr:
     image: lscr.io/linuxserver/sonarr:latest
@@ -78,7 +23,7 @@ services:
     environment:
       - PUID=1000
       - PGID=1000
-      - TZ=Europe/Copenhagen
+      - TZ=Europe/Paris
     volumes:
       - ${CONFIG_FOLDER}/sonarr:/config
       - ${DATA_FOLDER}/media/TV Shows:/tv #optional
@@ -87,7 +32,7 @@ services:
       - 8989:8989
     restart: unless-stopped
     networks:
-      - networkarr-pri
+      - networkarr
 
   sonarr-cz:
     image: lscr.io/linuxserver/sonarr:latest
@@ -104,7 +49,7 @@ services:
       - 8990:8989
     restart: unless-stopped
     networks:
-      - networkarr-pri
+      - networkarr
 
   radarr:
     image: lscr.io/linuxserver/radarr:latest
@@ -121,7 +66,7 @@ services:
       - 7878:7878
     restart: unless-stopped
     networks:
-      - networkarr-pri
+      - networkarr
 
   radarr-cz:
     image: lscr.io/linuxserver/radarr:latest
@@ -138,43 +83,7 @@ services:
       - 7879:7878
     restart: unless-stopped
     networks:
-      - networkarr-pri
-
-  bazarr:
-    image: lscr.io/linuxserver/bazarr:latest
-    container_name: bazarr
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=Europe/Copenhagen
-    volumes:
-      - ${CONFIG_FOLDER}/bazarr:/config
-      - ${DATA_FOLDER}/media/Movies:/movies #optional
-      - ${DATA_FOLDER}/media/TV Shows:/tv #optional
-    ports:
-      - 6767:6767
-    restart: unless-stopped
-    networks:
-      - networkarr-pri
-
-  deluge:
-    image: lscr.io/linuxserver/deluge:latest
-    container_name: deluge
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=Europe/Copenhagen
-      - DELUGE_LOGLEVEL=error #optional
-    volumes:
-      - ${CONFIG_FOLDER}/deluge:/config
-      - ${DATA_FOLDER}/downloads:/downloads
-    ports:
-      - 8112:8112
-      - 6881:6881
-      - 6881:6881/udp
-    restart: unless-stopped
-    networks:
-      - networkarr-pri
+      - networkarr
 
   overseerr:
     image: lscr.io/linuxserver/overseerr:latest
@@ -184,13 +93,13 @@ services:
       - PGID=1000
       - TZ=Europe/Copenhagen
     volumes:
-      - ${DATA_FOLDER}/overseerr:/config
+      - ${CONFIG_FOLDER}/overseerr:/config
     ports:
       - 5055:5055
     restart: unless-stopped
     networks:
-      - networkarr-pri
-      
+      - networkarr
+
   overseerr-cz:
     image: lscr.io/linuxserver/overseerr:latest
     container_name: overseerr-cz
@@ -199,12 +108,12 @@ services:
       - PGID=1000
       - TZ=Europe/Copenhagen
     volumes:
-      - ${DATA_FOLDER}/overseerr:/config
+      - ${CONFIG_FOLDER}/overseerr-cz:/config
     ports:
       - 5056:5055
     restart: unless-stopped
     networks:
-      - networkarr-pri
+      - networkarr
 
   tautulli:
     image: lscr.io/linuxserver/tautulli:latest
@@ -219,7 +128,7 @@ services:
       - 8181:8181
     restart: unless-stopped
     networks:
-      - networkarr-priv
+      - networkarr
 
   plex:
     container_name: plex
@@ -230,43 +139,67 @@ services:
       - PLEX_CLAIM=${PLEX_CLAIM}
     network_mode: host
     volumes:
-      - ${DATA_FOLDER}/plex:/config
+      - ${CONFIG_FOLDER}/plex:/config
       - ${DATA_FOLDER}/transcode:/transcode
       - ${DATA_FOLDER}:/data
     devices:
       - /dev/dri:/dev/dri
 
-  heimdall:
-    image: lscr.io/linuxserver/heimdall:latest
-    container_name: heimdall
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent:latest
+    container_name: qbittorrent
+    restart: unless-stopped
     environment:
       - PUID=1000
       - PGID=1000
-      - TZ=Europe/London
+      - TZ=Etc/UTC
+      - WEBUI_PORT=8080
+      - TORRENTING_PORT=${VPN_PORT}
+      - DOCKER_MODS=arafatamim/linuxserver-io-mod-vuetorrent
+    depends_on:
+      gluetun:
+        condition: service_started
     volumes:
-      - ${CONFIG_FOLDER}/heimdall:/config
-    ports:
-      - 83:80
-      # - 445:443
+      - ${CONFIG_FOLDER}/qbittorrent:/config
+      - ${DATA_FOLDER}/downloads:/downloads
+    network_mode: service:gluetun
+
+  gluetun:
+    container_name: gluetun
+    image: qmcgaw/gluetun
     restart: unless-stopped
-    networks:
-      - networkarr-priv
+    ports:
+      - 8080:8080
+      - ${VPN_PORT}:${VPN_PORT}
+      - ${VPN_PORT}:${VPN_PORT}/udp
+      - 9117:9117
+    cap_add:
+      - NET_ADMIN
+    environment:
+      - VPN_SERVICE_PROVIDER=${VPN_SERVICE_PROVIDER}
+      - VPN_TYPE=wireguard
+      - WIREGUARD_PRIVATE_KEY=${WIREGUARD_PRIVATE_KEY}
+      - WIREGUARD_ADDRESSES=${WIREGUARD_ADDRESSES}
+      - WIREGUARD_PRESHARED_KEY=${WIREGUARD_PRESHARED_KEY}
+      - WIREGUARD_PUBLIC_KEY=${WIREGUARD_PUBLIC_KEY}
+      - FIREWALL_VPN_INPUT_PORTS=${VPN_PORT}
+      - SERVER_COUNTRIES=${VPN_COUNTRY}
 
-  watchtower:
-    image: containrrr/watchtower
-    container_name: watchtower
+  nginx:
+    container_name: nginx
+    image: nginx
+    restart: unless-stopped
+    ports:
+      - 80:80
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - ${CONFIG_FOLDER}/watchtower/config.json:/config.jsom
-    networks:
-      - networkarr-pri
+      - ${DATA_FOLDER}/nginx:/usr/share/nginx/html:ro
 
-networks:
-  networkarr-pub:
-    name: networkarr-pub
-    driver: bridge
-    internal: false
-  networkarr-pri:
-    name: networkarr-pri
-    driver: bridge
-    internal: true
+  cloudflared:
+    container_name: cloudflared-tunnel
+    image: cloudflare/cloudflared
+    restart: unless-stopped
+    command: tunnel run
+    environment:
+      - TUNNEL_TOKEN=${CLOUDFLARED_TOKEN}
+    networks:
+      - networkarr
